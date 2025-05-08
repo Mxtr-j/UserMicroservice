@@ -29,7 +29,7 @@ public class UsersAccountsController {
 
     @PostMapping
     public UsersAccounts createUser(@RequestBody UsersAccounts user) {
-        return usersAccountsService.createUser(user);
+        return usersAccountsService.registerUser(user);
     }
 
     @DeleteMapping("/{id}")

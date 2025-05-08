@@ -3,6 +3,7 @@ package it.unical.tickettwo.userservice.service;
 import it.unical.tickettwo.userservice.domain.UsersAccounts;
 import it.unical.tickettwo.userservice.repository.UsersAccountsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,6 +15,9 @@ public class UsersAccountsService {
     @Autowired
     private UsersAccountsRepository usersAccountsRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public List<UsersAccounts> getAllUsers() {
         return usersAccountsRepository.findAll();
     }
@@ -22,7 +26,10 @@ public class UsersAccountsService {
         return usersAccountsRepository.findById(id);
     }
 
-    public UsersAccounts createUser(UsersAccounts user) {
+    public UsersAccounts registerUser(UsersAccounts user) {
+        System.out.println(user.getPassword());
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        System.out.println(user.getPassword());
         return usersAccountsRepository.save(user);
     }
 
