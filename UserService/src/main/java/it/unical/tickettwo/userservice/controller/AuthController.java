@@ -83,13 +83,17 @@ public class AuthController {
     public boolean isAuthenticated(HttpServletRequest req) {
         String auth = req.getHeader("Authorization");
         System.out.println("Authorization Header: " + auth);
+
         if (auth != null && auth.startsWith("Basic ")) {
             String token = auth.substring("Basic ".length());
             System.out.println("Token: " + token);
+            System.out.println("Decoded: " + decodeBase64(token));
+
             UsersAccounts user = getUserByToken(token);
             System.out.println("Authenticated User: " + user);
             return user != null;
         }
+
         System.out.println("Authorization Header is missing or invalid");
         return false;
     }
@@ -102,9 +106,18 @@ public class AuthController {
             if (parts.length == 2) {
                 String username = parts[0];
                 String password = parts[1];
+
+                System.out.println("Username: " + username);
+                System.out.println("Password: " + password);
+
                 UsersAccounts user = usersAccountsService.getUserByUsername(username);
-                if (user != null && passwordEncoder.matches(password, user.getPassword())) {
-                    return user;
+                if (user != null) {
+                    System.out.println("Stored password: " + user.getPassword());
+                    System.out.println("Password match: " + passwordEncoder.matches(password, user.getPassword()));
+
+                    if (passwordEncoder.matches(password, user.getPassword())) {
+                        return user;
+                    }
                 }
             }
         }

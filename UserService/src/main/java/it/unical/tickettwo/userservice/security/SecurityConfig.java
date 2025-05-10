@@ -23,9 +23,10 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(withDefaults());
+                .httpBasic(httpBasic -> httpBasic.disable());
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
