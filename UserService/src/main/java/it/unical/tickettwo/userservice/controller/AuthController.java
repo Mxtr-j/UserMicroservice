@@ -1,10 +1,14 @@
 package it.unical.tickettwo.userservice.controller;
 
+import it.unical.tickettwo.userservice.JwtUtil;
 import it.unical.tickettwo.userservice.domain.UsersAccounts;
+import it.unical.tickettwo.userservice.dto.UsersAccountsDTO;
 import it.unical.tickettwo.userservice.service.UsersAccountsService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,31 +46,23 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public AuthToken login(@RequestBody UsersAccounts user, HttpServletRequest req) throws Exception {
+    public AuthToken login(@RequestBody UsersAccounts user) {
         String username = user.getUsername();
         String password = user.getPassword();
-        System.out.println(username);
-        System.out.println(password);
-        System.out.print("password: " + password);
-        UsersAccounts storedUser = usersAccountsService.getUserByUsername(username);
-        System.out.println("storedUsername = " + storedUser.getUsername());
-        System.out.println("storedPassword = " + storedUser.getPassword());
 
-        System.out.println(passwordEncoder.matches(password, storedUser.getPassword()));
+        UsersAccounts storedUser = usersAccountsService.getUserByUsername(username);
+
         if (storedUser != null && passwordEncoder.matches(password, storedUser.getPassword())) {
-            String concat = username + ":" + password;
-            String token = codeBase64(concat);
-            HttpSession session = req.getSession();
-            session.setAttribute("user", storedUser);
+            String token = JwtUtil.generateToken(username);
             AuthToken auth = new AuthToken();
             auth.setToken(token);
             auth.setUser(storedUser);
-            System.out.println("Token:" + token);
             return auth;
         }
-        System.out.println("loginError");
+
         return null;
     }
+
 
     @PostMapping("/logout")
     public boolean logout(HttpServletRequest req) {
@@ -81,21 +77,35 @@ public class AuthController {
 
     @PostMapping("/isAuthenticated")
     public boolean isAuthenticated(HttpServletRequest req) {
-        String auth = req.getHeader("Authorization");
-        System.out.println("Authorization Header: " + auth);
+        String authHeader = req.getHeader("Authorization");
 
-        if (auth != null && auth.startsWith("Basic ")) {
-            String token = auth.substring("Basic ".length());
-            System.out.println("Token: " + token);
-            System.out.println("Decoded: " + decodeBase64(token));
-
-            UsersAccounts user = getUserByToken(token);
-            System.out.println("Authenticated User: " + user);
-            return user != null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            return JwtUtil.validateToken(token);
         }
 
-        System.out.println("Authorization Header is missing or invalid");
         return false;
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UsersAccountsDTO> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (JwtUtil.validateToken(token)) {
+                String username = JwtUtil.extractUsername(token);
+                UsersAccounts user = usersAccountsService.getUserByUsername(username);
+                if (user != null) {
+                    UsersAccountsDTO dto = new UsersAccountsDTO(
+                            user.getId(),
+                            user.getUsername(),
+                            user.getRole(),
+                            user.getAccessType()
+                    );
+                    return ResponseEntity.ok(dto);
+                }
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
 
