@@ -1,6 +1,6 @@
 package it.unical.tickettwo.userservice.controller;
 
-import it.unical.tickettwo.userservice.JwtUtil;
+import it.unical.tickettwo.userservice.util.JwtUtil;
 import it.unical.tickettwo.userservice.domain.UsersAccounts;
 import it.unical.tickettwo.userservice.dto.UsersAccountsDTO;
 import it.unical.tickettwo.userservice.service.UsersAccountsService;
@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -87,7 +88,8 @@ public class AuthController {
         return false;
     }
 
-    @GetMapping("/me")
+    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+
     public ResponseEntity<UsersAccountsDTO> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
@@ -95,6 +97,10 @@ public class AuthController {
                 String username = JwtUtil.extractUsername(token);
                 UsersAccounts user = usersAccountsService.getUserByUsername(username);
                 if (user != null) {
+                    System.out.println("Token: " + token);
+                    System.out.println("Username estratto: " + username);
+                    System.out.println("Utente trovato: " + user);
+
                     UsersAccountsDTO dto = new UsersAccountsDTO(
                             user.getId(),
                             user.getUsername(),
@@ -108,37 +114,4 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-
-    public UsersAccounts getUserByToken(String token) {
-        if (token != null) {
-            String decode = decodeBase64(token);
-            String[] parts = decode.split(":");
-            if (parts.length == 2) {
-                String username = parts[0];
-                String password = parts[1];
-
-                System.out.println("Username: " + username);
-                System.out.println("Password: " + password);
-
-                UsersAccounts user = usersAccountsService.getUserByUsername(username);
-                if (user != null) {
-                    System.out.println("Stored password: " + user.getPassword());
-                    System.out.println("Password match: " + passwordEncoder.matches(password, user.getPassword()));
-
-                    if (passwordEncoder.matches(password, user.getPassword())) {
-                        return user;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    private static String codeBase64(String value) {
-        return Base64.getEncoder().encodeToString(value.getBytes());
-    }
-
-    private static String decodeBase64(String value) {
-        return new String(Base64.getDecoder().decode(value));
-    }
 }

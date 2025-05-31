@@ -4,6 +4,7 @@ import it.unical.tickettwo.userservice.domain.UsersAccounts;
 import it.unical.tickettwo.userservice.service.UsersAccountsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,6 +16,9 @@ public class UsersAccountsController {
 
     @Autowired
     private UsersAccountsService usersAccountsService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping
     public List<UsersAccounts> getAllUsers() {
@@ -29,7 +33,7 @@ public class UsersAccountsController {
 
     @PostMapping
     public UsersAccounts createUser(@RequestBody UsersAccounts user) {
-        return usersAccountsService.registerUser(user);
+        return usersAccountsService.registerUser(user,passwordEncoder);
     }
 
     @DeleteMapping("/{id}")
